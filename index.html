@@ -12,13 +12,13 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
         body { font-family: 'Poppins', sans-serif; background-color: #f0f4f8; }
-        .grade-card { transition: all 0.3s ease; }
-        .grade-card:hover { transform: translateY(-2px); }
+        .modal { transition: opacity 0.25s ease; }
+        body.modal-active { overflow-x: hidden; overflow-y: visible !important; }
     </style>
 </head>
-<body class="min-h-screen">
+<body class="min-h-screen relative">
 
-    <div class="max-w-md mx-auto bg-white min-h-screen shadow-xl relative pb-20">
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-xl relative pb-24">
         
         <div class="bg-blue-600 p-6 rounded-b-3xl shadow-lg text-white mb-6">
             <div class="flex items-center gap-3 mb-2">
@@ -38,36 +38,39 @@
         </div>
 
         <div id="resultContainer" class="px-5 hidden">
-            <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-md mb-4 text-center">
+            <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-md mb-4 text-center relative overflow-hidden">
                 <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 text-blue-600 text-2xl font-bold">
                     <span id="initialName">A</span>
                 </div>
                 <h2 id="studentName" class="text-lg font-bold text-gray-800 leading-tight">Nama Siswa</h2>
                 <div class="flex justify-center gap-4 mt-2 text-sm text-gray-500">
                     <span class="bg-gray-100 px-2 py-1 rounded">NISN: <b id="studentNISN">-</b></span>
-                    <span class="bg-gray-100 px-2 py-1 rounded">NIS: <b id="studentNIS">-</b></span>
                 </div>
                 
                 <div class="grid grid-cols-2 gap-3 mt-4">
                     <div class="bg-yellow-50 p-2 rounded-xl border border-yellow-100">
-                        <p class="text-xs text-yellow-600">Peringkat</p>
-                        <p class="text-xl font-bold text-yellow-700">#<span id="studentRank">-</span></p>
+                        <p class="text-xs text-yellow-600">Peringkat Kelas</p>
+                        <p class="text-lg font-bold text-yellow-700" id="rankDisplay">-</p>
                     </div>
                     <div class="bg-green-50 p-2 rounded-xl border border-green-100">
                         <p class="text-xs text-green-600">Total Nilai</p>
                         <p class="text-xl font-bold text-green-700" id="studentTotal">-</p>
                     </div>
                 </div>
+
+                <button onclick="openAdviceModal()" class="mt-4 w-full bg-indigo-100 text-indigo-700 py-2 rounded-xl text-sm font-bold hover:bg-indigo-200 transition flex items-center justify-center gap-2">
+                    <i class="fas fa-lightbulb"></i> Lihat Saran Akademik
+                </button>
             </div>
 
             <div class="mb-4">
-                <h3 class="font-bold text-gray-700 mb-2 pl-1">Rincian Akademik</h3>
+                <h3 class="font-bold text-gray-700 mb-2 pl-1 text-sm uppercase tracking-wide">Rincian Nilai</h3>
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden" id="gradesList">
                     </div>
             </div>
 
-            <div class="mb-24">
-                <h3 class="font-bold text-gray-700 mb-2 pl-1">Kehadiran</h3>
+            <div class="mb-8">
+                <h3 class="font-bold text-gray-700 mb-2 pl-1 text-sm uppercase tracking-wide">Kehadiran</h3>
                 <div class="grid grid-cols-3 gap-3 text-center">
                     <div class="bg-blue-50 p-3 rounded-xl">
                         <p class="text-xs text-blue-600">Sakit</p>
@@ -86,19 +89,41 @@
         </div>
 
         <div id="emptyState" class="text-center mt-10 px-6 opacity-60">
-            <img src="https://illustrations.popsy.co/amber/student-going-to-school.svg" alt="Student" class="w-48 mx-auto mb-4 grayscale">
+            <i class="fas fa-school text-6xl text-gray-300 mb-4"></i>
             <p class="text-gray-500">Ketik nama kamu di atas untuk melihat nilai.</p>
         </div>
 
-        <div id="downloadBtnContainer" class="fixed bottom-6 left-0 right-0 px-6 hidden z-50">
-            <button onclick="downloadPDF()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-2 transition transform active:scale-95">
-                <i class="fas fa-file-pdf"></i> Simpan Nilai (PDF)
+        <div id="downloadBtnContainer" class="fixed bottom-6 left-0 right-0 px-6 hidden z-40">
+            <button onclick="downloadPDF()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg flex items-center justify-center gap-2 transition transform active:scale-95">
+                <i class="fas fa-file-pdf"></i> Simpan PDF
             </button>
         </div>
     </div>
 
+    <div id="adviceModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
+        <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50" onclick="closeAdviceModal()"></div>
+        
+        <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-2xl shadow-2xl z-50 overflow-y-auto max-h-[90vh] transform scale-95 transition-transform duration-300">
+            
+            <div class="bg-indigo-600 p-4 text-white rounded-t-2xl flex justify-between items-center">
+                <h3 class="font-bold text-lg"><i class="fas fa-comment-dots mr-2"></i>Saran Akademik</h3>
+                <button onclick="closeAdviceModal()" class="text-white hover:text-gray-200 focus:outline-none">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <div class="p-6">
+                <div id="adviceContent" class="space-y-4"></div>
+                
+                <button onclick="closeAdviceModal()" class="mt-6 w-full bg-gray-100 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-200">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // DATA SISWA DARI CSV ANDA
+        // DATA SISWA
         const studentsData = [
             {No:1,Nama:"ABIE YAHYA FAUDJAN",NISN:"0118597139",NIS:"24257171",PAI:83,PP:82,BINd:79,Mtk:83,IPA:78,IPS:84,Bing:79,PJOK:82,Inf:78,Seni:85,Sunda:82,sakit:7,Izin:0,Alfa:1,Total:895,Peringkat:32},
             {No:2,Nama:"ALANIS AILA SYAQINA",NISN:"0119343209",NIS:"24257172",PAI:81,PP:81,BINd:83,Mtk:78,IPA:78,IPS:84,Bing:79,PJOK:83,Inf:80,Seni:83,Sunda:83,sakit:3,Izin:1,Alfa:0,Total:893,Peringkat:33},
@@ -173,9 +198,6 @@
                 resultContainer.classList.remove('hidden');
                 emptyState.classList.add('hidden');
                 btnContainer.classList.remove('hidden');
-            } else {
-                currentStudent = null;
-                // Opsional: Tampilkan pesan tidak ditemukan jika ingin
             }
         }
 
@@ -183,9 +205,17 @@
             document.getElementById('studentName').innerText = s.Nama;
             document.getElementById('initialName').innerText = s.Nama.charAt(0);
             document.getElementById('studentNISN').innerText = s.NISN;
-            document.getElementById('studentNIS').innerText = s.NIS;
-            document.getElementById('studentRank').innerText = s.Peringkat;
             document.getElementById('studentTotal').innerText = s.Total;
+
+            // LOGIKA PERINGKAT (FITUR BARU)
+            const rankElem = document.getElementById('rankDisplay');
+            if (s.Peringkat <= 10) {
+                rankElem.innerHTML = `<span class="text-3xl">#${s.Peringkat}</span>`;
+                rankElem.className = "font-bold text-yellow-700";
+            } else {
+                rankElem.innerHTML = `<span class="text-sm italic">Keep Fighting!</span>`;
+                rankElem.className = "font-bold text-gray-500 mt-1 block";
+            }
 
             // Absensi
             document.getElementById('attSakit').innerText = s.sakit;
@@ -212,6 +242,89 @@
             });
         }
 
+        // --- LOGIKA MODAL SARAN AKADEMIK ---
+        
+        function openAdviceModal() {
+            if (!currentStudent) return;
+            
+            const modal = document.getElementById('adviceModal');
+            const content = document.getElementById('adviceContent');
+            const s = currentStudent;
+            
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            document.body.classList.add('modal-active');
+            
+            let adviceHTML = '';
+            let hasIssue = false;
+
+            // 1. Cek Nilai di bawah 80
+            const lowSubjects = [];
+            Object.keys(mapelLabel).forEach(code => {
+                if (s[code] < 80) {
+                    lowSubjects.push(mapelLabel[code]);
+                }
+            });
+
+            if (lowSubjects.length > 0) {
+                hasIssue = true;
+                adviceHTML += `
+                    <div class="bg-orange-50 border-l-4 border-orange-500 p-4 rounded">
+                        <p class="font-bold text-orange-700 text-sm">⚠️ Perlu Peningkatan</p>
+                        <p class="text-sm text-gray-600 mt-1">Nilai kamu belum maksimal di pelajaran: <b>${lowSubjects.join(", ")}</b>. Yuk, lebih rajin latihan soal dan bertanya pada guru!</p>
+                    </div>
+                `;
+            }
+
+            // 2. Cek Absensi (Alfa)
+            if (s.Alfa > 2) {
+                hasIssue = true;
+                adviceHTML += `
+                    <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                        <p class="font-bold text-red-700 text-sm">⚠️ Kehadiran</p>
+                        <p class="text-sm text-gray-600 mt-1">Kamu memiliki <b>${s.Alfa} Alfa</b>. Usahakan selalu hadir atau berikan keterangan jika berhalangan ya.</p>
+                    </div>
+                `;
+            }
+
+            // 3. Pesan Apresiasi (Jika Peringkat 1-10)
+            if (s.Peringkat <= 10) {
+                adviceHTML += `
+                    <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded">
+                        <p class="font-bold text-green-700 text-sm">🌟 Luar Biasa!</p>
+                        <p class="text-sm text-gray-600 mt-1">Selamat, kamu masuk <b>10 Besar</b>! Pertahankan prestasimu dan jangan lupa bantu teman-temanmu belajar.</p>
+                    </div>
+                `;
+            } else if (!hasIssue) {
+                // Jika tidak masuk 10 besar tapi tidak ada nilai < 80
+                adviceHTML += `
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                        <p class="font-bold text-blue-700 text-sm">👍 Kerja Bagus!</p>
+                        <p class="text-sm text-gray-600 mt-1">Nilai-nilaimu sudah cukup baik (di atas 80). Tingkatkan sedikit lagi agar bisa masuk peringkat atas di semester depan!</p>
+                    </div>
+                `;
+            }
+
+            // Default jika tidak ada saran spesifik lain (dan rank > 10)
+            if (adviceHTML === '') {
+                 adviceHTML += `
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                        <p class="font-bold text-blue-700 text-sm">✨ Tetap Semangat!</p>
+                        <p class="text-sm text-gray-600 mt-1">Perjalanan masih panjang. Evaluasi cara belajarmu dan fokus pada pelajaran yang kamu minati.</p>
+                    </div>
+                `;
+            }
+
+            content.innerHTML = adviceHTML;
+        }
+
+        function closeAdviceModal() {
+            const modal = document.getElementById('adviceModal');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            document.body.classList.remove('modal-active');
+        }
+
+        // --- END MODAL LOGIC ---
+
         async function downloadPDF() {
             if (!currentStudent) return;
             const { jsPDF } = window.jspdf;
@@ -219,7 +332,7 @@
             const s = currentStudent;
 
             // Header
-            doc.setFillColor(37, 99, 235); // Blue
+            doc.setFillColor(37, 99, 235);
             doc.rect(0, 0, 210, 40, 'F');
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(22);
@@ -236,9 +349,14 @@
             doc.text(`NISN : ${s.NISN}`, 15, 62);
             doc.text(`NIS  : ${s.NIS}`, 15, 69);
             
+            // Logika Peringkat di PDF
             doc.setFontSize(14);
             doc.setFont('helvetica', 'bold');
-            doc.text(`Peringkat: ${s.Peringkat}`, 150, 55);
+            if (s.Peringkat <= 10) {
+                doc.text(`Peringkat: ${s.Peringkat}`, 150, 55);
+            } else {
+                 doc.text(`Peringkat: -`, 150, 55);
+            }
             doc.text(`Total Nilai: ${s.Total}`, 150, 62);
 
             // Tabel Nilai
@@ -265,12 +383,10 @@
                 headStyles: { fillColor: [100, 100, 100] }
             });
 
-            // Footer / TTD
             const pageHeight = doc.internal.pageSize.height;
             doc.setFontSize(10);
             doc.text("Dokumen ini digenerate secara otomatis.", 105, pageHeight - 10, null, null, "center");
 
-            // Save
             doc.save(`Laporan_Nilai_${s.Nama.replace(/\s+/g, '_')}.pdf`);
         }
     </script>
