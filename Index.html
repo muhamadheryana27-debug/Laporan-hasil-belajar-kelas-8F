@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cek Nilai Kelas VIII F</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+        body { font-family: 'Poppins', sans-serif; background-color: #f0f4f8; }
+        .grade-card { transition: all 0.3s ease; }
+        .grade-card:hover { transform: translateY(-2px); }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-xl relative pb-20">
+        
+        <div class="bg-blue-600 p-6 rounded-b-3xl shadow-lg text-white mb-6">
+            <div class="flex items-center gap-3 mb-2">
+                <i class="fas fa-graduation-cap text-3xl"></i>
+                <div>
+                    <h1 class="text-xl font-bold">Portal Nilai Siswa</h1>
+                    <p class="text-blue-100 text-sm">Kelas VIII F - Semester Genap</p>
+                </div>
+            </div>
+            
+            <div class="mt-4 relative">
+                <input type="text" id="searchInput" placeholder="Ketik nama kamu di sini..." 
+                    class="w-full pl-10 pr-4 py-3 rounded-xl text-gray-800 focus:outline-none focus:ring-4 focus:ring-blue-300 shadow-inner"
+                    onkeyup="searchStudent()">
+                <i class="fas fa-search absolute left-4 top-3.5 text-gray-400"></i>
+            </div>
+        </div>
+
+        <div id="resultContainer" class="px-5 hidden">
+            <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-md mb-4 text-center">
+                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 text-blue-600 text-2xl font-bold">
+                    <span id="initialName">A</span>
+                </div>
+                <h2 id="studentName" class="text-lg font-bold text-gray-800 leading-tight">Nama Siswa</h2>
+                <div class="flex justify-center gap-4 mt-2 text-sm text-gray-500">
+                    <span class="bg-gray-100 px-2 py-1 rounded">NISN: <b id="studentNISN">-</b></span>
+                    <span class="bg-gray-100 px-2 py-1 rounded">NIS: <b id="studentNIS">-</b></span>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3 mt-4">
+                    <div class="bg-yellow-50 p-2 rounded-xl border border-yellow-100">
+                        <p class="text-xs text-yellow-600">Peringkat</p>
+                        <p class="text-xl font-bold text-yellow-700">#<span id="studentRank">-</span></p>
+                    </div>
+                    <div class="bg-green-50 p-2 rounded-xl border border-green-100">
+                        <p class="text-xs text-green-600">Total Nilai</p>
+                        <p class="text-xl font-bold text-green-700" id="studentTotal">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h3 class="font-bold text-gray-700 mb-2 pl-1">Rincian Akademik</h3>
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden" id="gradesList">
+                    </div>
+            </div>
+
+            <div class="mb-24">
+                <h3 class="font-bold text-gray-700 mb-2 pl-1">Kehadiran</h3>
+                <div class="grid grid-cols-3 gap-3 text-center">
+                    <div class="bg-blue-50 p-3 rounded-xl">
+                        <p class="text-xs text-blue-600">Sakit</p>
+                        <p class="font-bold text-blue-800" id="attSakit">0</p>
+                    </div>
+                    <div class="bg-purple-50 p-3 rounded-xl">
+                        <p class="text-xs text-purple-600">Izin</p>
+                        <p class="font-bold text-purple-800" id="attIzin">0</p>
+                    </div>
+                    <div class="bg-red-50 p-3 rounded-xl">
+                        <p class="text-xs text-red-600">Alfa</p>
+                        <p class="font-bold text-red-800" id="attAlfa">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="emptyState" class="text-center mt-10 px-6 opacity-60">
+            <img src="https://illustrations.popsy.co/amber/student-going-to-school.svg" alt="Student" class="w-48 mx-auto mb-4 grayscale">
+            <p class="text-gray-500">Ketik nama kamu di atas untuk melihat nilai.</p>
+        </div>
+
+        <div id="downloadBtnContainer" class="fixed bottom-6 left-0 right-0 px-6 hidden z-50">
+            <button onclick="downloadPDF()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-2 transition transform active:scale-95">
+                <i class="fas fa-file-pdf"></i> Simpan Nilai (PDF)
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // DATA SISWA DARI CSV ANDA
+        const studentsData = [
+            {No:1,Nama:"ABIE YAHYA FAUDJAN",NISN:"0118597139",NIS:"24257171",PAI:83,PP:82,BINd:79,Mtk:83,IPA:78,IPS:84,Bing:79,PJOK:82,Inf:78,Seni:85,Sunda:82,sakit:7,Izin:0,Alfa:1,Total:895,Peringkat:32},
+            {No:2,Nama:"ALANIS AILA SYAQINA",NISN:"0119343209",NIS:"24257172",PAI:81,PP:81,BINd:83,Mtk:78,IPA:78,IPS:84,Bing:79,PJOK:83,Inf:80,Seni:83,Sunda:83,sakit:3,Izin:1,Alfa:0,Total:893,Peringkat:33},
+            {No:3,Nama:"ALYA ZILKHAIRANA NAJWA",NISN:"0121375781",NIS:"24257173",PAI:82,PP:82,BINd:84,Mtk:85,IPA:78,IPS:84,Bing:81,PJOK:82,Inf:90,Seni:88,Sunda:83,sakit:2,Izin:0,Alfa:0,Total:919,Peringkat:17},
+            {No:4,Nama:"ANISAH MUTIA RAMADAN",NISN:"0124796894",NIS:"24257174",PAI:84,PP:81,BINd:83,Mtk:84,IPA:78,IPS:84,Bing:79,PJOK:81,Inf:80,Seni:85,Sunda:82,sakit:2,Izin:0,Alfa:0,Total:901,Peringkat:29},
+            {No:5,Nama:"ARAY BAIHAKIE",NISN:"0112999130",NIS:"24257175",PAI:84,PP:81,BINd:83,Mtk:84,IPA:78,IPS:84,Bing:79,PJOK:83,Inf:84,Seni:85,Sunda:83,sakit:0,Izin:0,Alfa:0,Total:908,Peringkat:22},
+            {No:6,Nama:"AUDRIA BALQIS ZAHIRA PUTRI",NISN:"0119058859",NIS:"24257176",PAI:84,PP:82,BINd:86,Mtk:82,IPA:80,IPS:86,Bing:80,PJOK:81,Inf:88,Seni:87,Sunda:82,sakit:4,Izin:1,Alfa:0,Total:918,Peringkat:18},
+            {No:7,Nama:"BAYU MAULANA",NISN:"0125690396",NIS:"24257177",PAI:87,PP:82,BINd:83,Mtk:87,IPA:80,IPS:88,Bing:81,PJOK:82,Inf:90,Seni:84,Sunda:82,sakit:2,Izin:0,Alfa:0,Total:926,Peringkat:13},
+            {No:8,Nama:"FAHMA",NISN:"0114851216",NIS:"24257178",PAI:84,PP:79,BINd:83,Mtk:79,IPA:78,IPS:85,Bing:79,PJOK:84,Inf:80,Seni:84,Sunda:82,sakit:9,Izin:0,Alfa:0,Total:897,Peringkat:31},
+            {No:9,Nama:"FARHAT MIFZAL SURACHMAN",NISN:"0117889573",NIS:"24257179",PAI:85,PP:83,BINd:83,Mtk:81,IPA:78,IPS:85,Bing:80,PJOK:86,Inf:80,Seni:85,Sunda:83,sakit:2,Izin:1,Alfa:0,Total:909,Peringkat:21},
+            {No:10,Nama:"FIRGY AULIA SYA'BANA",NISN:"0118129819",NIS:"24257180",PAI:90,PP:83,BINd:86,Mtk:80,IPA:85,IPS:92,Bing:85,PJOK:85,Inf:90,Seni:86,Sunda:87,sakit:2,Izin:0,Alfa:0,Total:949,Peringkat:5},
+            {No:11,Nama:"HERSYA YULVANSYAH MULIA",NISN:"0114689519",NIS:"24257181",PAI:84,PP:85,BINd:84,Mtk:82,IPA:80,IPS:89,Bing:82,PJOK:85,Inf:90,Seni:87,Sunda:83,sakit:5,Izin:2,Alfa:0,Total:931,Peringkat:11},
+            {No:12,Nama:"HUMAIRA SARAH AZ ZAHRA",NISN:"0122455423",NIS:"24257182",PAI:84,PP:83,BINd:83,Mtk:78,IPA:80,IPS:86,Bing:80,PJOK:82,Inf:80,Seni:86,Sunda:82,sakit:6,Izin:1,Alfa:0,Total:904,Peringkat:27},
+            {No:13,Nama:"INDRI RAHMAWATI",NISN:"0127417089",NIS:"24257183",PAI:92,PP:82,BINd:84,Mtk:82,IPA:80,IPS:83,Bing:79,PJOK:82,Inf:84,Seni:84,Sunda:82,sakit:10,Izin:3,Alfa:0,Total:914,Peringkat:19},
+            {No:14,Nama:"MAYADA PUTRI SUHERLANI",NISN:"0112335394",NIS:"24257184",PAI:83,PP:81,BINd:84,Mtk:78,IPA:78,IPS:84,Bing:80,PJOK:86,Inf:80,Seni:90,Sunda:84,sakit:5,Izin:1,Alfa:0,Total:908,Peringkat:23},
+            {No:15,Nama:"MUHAMAD FITRAH AL-FARIZI",NISN:"0111453211",NIS:"24257185",PAI:87,PP:85,BINd:88,Mtk:88,IPA:83,IPS:92,Bing:82,PJOK:86,Inf:90,Seni:90,Sunda:86,sakit:1,Izin:0,Alfa:0,Total:957,Peringkat:3},
+            {No:16,Nama:"MUHAMAD NABIL LATIF JABARUDIN",NISN:"0129550725",NIS:"24257186",PAI:82,PP:85,BINd:84,Mtk:87,IPA:78,IPS:90,Bing:83,PJOK:85,Inf:82,Seni:88,Sunda:83,sakit:0,Izin:0,Alfa:0,Total:927,Peringkat:12},
+            {No:17,Nama:"MUHAMMAD ADNAN FIRDAUS",NISN:"0121379615",NIS:"24257187",PAI:85,PP:83,BINd:84,Mtk:84,IPA:80,IPS:90,Bing:79,PJOK:85,Inf:84,Seni:85,Sunda:82,sakit:7,Izin:0,Alfa:0,Total:921,Peringkat:16},
+            {No:18,Nama:"MUHAMMAD FAUZAN AFGANI",NISN:"0114611759",NIS:"24257188",PAI:83,PP:81,BINd:83,Mtk:83,IPA:80,IPS:88,Bing:79,PJOK:83,Inf:80,Seni:85,Sunda:82,sakit:0,Izin:0,Alfa:0,Total:907,Peringkat:24},
+            {No:19,Nama:"MUHAMMAD HAFIDZ PRATAMA",NISN:"0116874326",NIS:"24257189",PAI:85,PP:84,BINd:83,Mtk:83,IPA:80,IPS:90,Bing:83,PJOK:85,Inf:80,Seni:88,Sunda:82,sakit:2,Izin:1,Alfa:0,Total:923,Peringkat:15},
+            {No:20,Nama:"MUHAMMAD PARIJ PAMUNGKAS",NISN:"0112410679",NIS:"24257190",PAI:85,PP:81,BINd:81,Mtk:80,IPA:78,IPS:87,Bing:80,PJOK:86,Inf:80,Seni:85,Sunda:82,sakit:0,Izin:0,Alfa:0,Total:905,Peringkat:25},
+            {No:21,Nama:"MUHAMMAD RIZKY ISKANDAR",NISN:"0113364286",NIS:"24257191",PAI:84,PP:82,BINd:80,Mtk:84,IPA:76,IPS:86,Bing:79,PJOK:84,Inf:82,Seni:86,Sunda:82,sakit:8,Izin:0,Alfa:0,Total:905,Peringkat:26},
+            {No:22,Nama:"NADINE ADELIA RIZQULLAH",NISN:"0121971004",NIS:"24257192",PAI:86,PP:83,BINd:87,Mtk:85,IPA:82,IPS:88,Bing:82,PJOK:85,Inf:80,Seni:85,Sunda:83,sakit:7,Izin:4,Alfa:0,Total:926,Peringkat:14},
+            {No:23,Nama:"NAZRIL MAULDI",NISN:"0118501132",NIS:"24257193",PAI:81,PP:81,BINd:84,Mtk:82,IPA:76,IPS:84,Bing:79,PJOK:85,Inf:80,Seni:85,Sunda:82,sakit:3,Izin:0,Alfa:0,Total:899,Peringkat:30},
+            {No:24,Nama:"NURCHOLIS SHOLAHUDIN",NISN:"0116181434",NIS:"24257194",PAI:80,PP:81,BINd:82,Mtk:80,IPA:74,IPS:86,Bing:79,PJOK:86,Inf:80,Seni:83,Sunda:82,sakit:9,Izin:0,Alfa:0,Total:893,Peringkat:34},
+            {No:25,Nama:"RAISAUL AISYAH",NISN:"0128180503",NIS:"24257195",PAI:85,PP:82,BINd:84,Mtk:80,IPA:78,IPS:86,Bing:82,PJOK:84,Inf:82,Seni:86,Sunda:82,sakit:10,Izin:0,Alfa:0,Total:911,Peringkat:20},
+            {No:26,Nama:"RAISYA KAMILA",NISN:"0116779393",NIS:"24257196",PAI:84,PP:85,BINd:88,Mtk:85,IPA:83,IPS:90,Bing:82,PJOK:82,Inf:90,Seni:85,Sunda:84,sakit:2,Izin:0,Alfa:0,Total:938,Peringkat:8},
+            {No:27,Nama:"RIFAL TRI FAEYZA ADWA FADHLURRAHMAN",NISN:"0127512624",NIS:"24257197",PAI:87,PP:84,BINd:84,Mtk:88,IPA:84,IPS:89,Bing:81,PJOK:85,Inf:82,Seni:90,Sunda:83,sakit:3,Izin:1,Alfa:0,Total:937,Peringkat:9},
+            {No:28,Nama:"RIFANA ANJELA PUTRI",NISN:"0116132383",NIS:"24257198",PAI:95,PP:85,BINd:91,Mtk:90,IPA:83,IPS:93,Bing:85,PJOK:86,Inf:90,Seni:87,Sunda:87,sakit:1,Izin:0,Alfa:0,Total:972,Peringkat:2},
+            {No:29,Nama:"SAPUTRA HAFIZ ALFARIZI",NISN:"0124758495",NIS:"24257199",PAI:85,PP:86,BINd:87,Mtk:90,IPA:84,IPS:91,Bing:82,PJOK:84,Inf:90,Seni:87,Sunda:85,sakit:0,Izin:0,Alfa:0,Total:951,Peringkat:4},
+            {No:30,Nama:"SHAFWAN ALIF HIDAYAH",NISN:"0111422840",NIS:"24257200",PAI:87,PP:86,BINd:88,Mtk:86,IPA:83,IPS:90,Bing:85,PJOK:84,Inf:82,Seni:89,Sunda:83,sakit:2,Izin:0,Alfa:0,Total:943,Peringkat:7},
+            {No:31,Nama:"SITI RAISYA DWI ARIYANTI",NISN:"0127313990",NIS:"24257201",PAI:92,PP:85,BINd:91,Mtk:92,IPA:87,IPS:93,Bing:87,PJOK:84,Inf:92,Seni:88,Sunda:87,sakit:2,Izin:1,Alfa:0,Total:978,Peringkat:1},
+            {No:32,Nama:"SYAILA NUR AFIFAH",NISN:"0114093900",NIS:"24257202",PAI:85,PP:80,BINd:83,Mtk:84,IPA:78,IPS:84,Bing:79,PJOK:82,Inf:82,Seni:85,Sunda:82,sakit:8,Izin:0,Alfa:0,Total:904,Peringkat:28},
+            {No:33,Nama:"TRIAS OCTAVIANI PUTRI",NISN:"0115692823",NIS:"24257203",PAI:87,PP:84,BINd:87,Mtk:82,IPA:84,IPS:88,Bing:82,PJOK:85,Inf:84,Seni:88,Sunda:85,sakit:3,Izin:0,Alfa:0,Total:936,Peringkat:10},
+            {No:34,Nama:"ZULFA AULIA",NISN:"0119746116",NIS:"24257204",PAI:84,PP:83,BINd:86,Mtk:88,IPA:85,IPS:90,Bing:84,PJOK:84,Inf:92,Seni:88,Sunda:84,sakit:2,Izin:0,Alfa:0,Total:948,Peringkat:6}
+        ];
+
+        let currentStudent = null;
+
+        const mapelLabel = {
+            'PAI': 'Pend. Agama Islam',
+            'PP': 'PKN',
+            'BINd': 'B. Indonesia',
+            'Mtk': 'Matematika',
+            'IPA': 'IPA',
+            'IPS': 'IPS',
+            'Bing': 'B. Inggris',
+            'PJOK': 'PJOK',
+            'Inf': 'Informatika',
+            'Seni': 'Seni Budaya',
+            'Sunda': 'B. Sunda'
+        };
+
+        function searchStudent() {
+            const input = document.getElementById('searchInput').value.toLowerCase();
+            const resultContainer = document.getElementById('resultContainer');
+            const emptyState = document.getElementById('emptyState');
+            const btnContainer = document.getElementById('downloadBtnContainer');
+
+            if (input.length < 3) {
+                resultContainer.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                btnContainer.classList.add('hidden');
+                return;
+            }
+
+            const found = studentsData.find(s => s.Nama.toLowerCase().includes(input));
+
+            if (found) {
+                currentStudent = found;
+                displayStudent(found);
+                resultContainer.classList.remove('hidden');
+                emptyState.classList.add('hidden');
+                btnContainer.classList.remove('hidden');
+            } else {
+                currentStudent = null;
+                // Opsional: Tampilkan pesan tidak ditemukan jika ingin
+            }
+        }
+
+        function displayStudent(s) {
+            document.getElementById('studentName').innerText = s.Nama;
+            document.getElementById('initialName').innerText = s.Nama.charAt(0);
+            document.getElementById('studentNISN').innerText = s.NISN;
+            document.getElementById('studentNIS').innerText = s.NIS;
+            document.getElementById('studentRank').innerText = s.Peringkat;
+            document.getElementById('studentTotal').innerText = s.Total;
+
+            // Absensi
+            document.getElementById('attSakit').innerText = s.sakit;
+            document.getElementById('attIzin').innerText = s.Izin;
+            document.getElementById('attAlfa').innerText = s.Alfa;
+
+            // Render Nilai
+            const list = document.getElementById('gradesList');
+            list.innerHTML = '';
+
+            const subjects = Object.keys(mapelLabel);
+            subjects.forEach((code, index) => {
+                const score = s[code];
+                const label = mapelLabel[code];
+                const colorClass = score >= 90 ? 'text-green-600' : (score >= 80 ? 'text-blue-600' : 'text-gray-600');
+                
+                const item = `
+                    <div class="flex justify-between items-center p-4 ${index !== subjects.length - 1 ? 'border-b border-gray-100' : ''}">
+                        <span class="text-sm font-medium text-gray-600">${label}</span>
+                        <span class="font-bold ${colorClass}">${score}</span>
+                    </div>
+                `;
+                list.innerHTML += item;
+            });
+        }
+
+        async function downloadPDF() {
+            if (!currentStudent) return;
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const s = currentStudent;
+
+            // Header
+            doc.setFillColor(37, 99, 235); // Blue
+            doc.rect(0, 0, 210, 40, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(22);
+            doc.setFont('helvetica', 'bold');
+            doc.text("Laporan Capaian Nilai", 105, 20, null, null, "center");
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'normal');
+            doc.text("Kelas VIII F - Semester Genap", 105, 30, null, null, "center");
+
+            // Info Siswa
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(12);
+            doc.text(`Nama : ${s.Nama}`, 15, 55);
+            doc.text(`NISN : ${s.NISN}`, 15, 62);
+            doc.text(`NIS  : ${s.NIS}`, 15, 69);
+            
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Peringkat: ${s.Peringkat}`, 150, 55);
+            doc.text(`Total Nilai: ${s.Total}`, 150, 62);
+
+            // Tabel Nilai
+            const tableData = Object.keys(mapelLabel).map(key => [mapelLabel[key], s[key]]);
+            
+            doc.autoTable({
+                startY: 80,
+                head: [['Mata Pelajaran', 'Nilai Akhir']],
+                body: tableData,
+                theme: 'striped',
+                headStyles: { fillColor: [37, 99, 235] },
+                styles: { fontSize: 12, cellPadding: 3 }
+            });
+
+            // Tabel Absensi
+            const finalY = doc.lastAutoTable.finalY + 10;
+            doc.text("Kehadiran:", 15, finalY);
+            
+            doc.autoTable({
+                startY: finalY + 5,
+                head: [['Sakit', 'Izin', 'Alfa']],
+                body: [[s.sakit, s.Izin, s.Alfa]],
+                theme: 'grid',
+                headStyles: { fillColor: [100, 100, 100] }
+            });
+
+            // Footer / TTD
+            const pageHeight = doc.internal.pageSize.height;
+            doc.setFontSize(10);
+            doc.text("Dokumen ini digenerate secara otomatis.", 105, pageHeight - 10, null, null, "center");
+
+            // Save
+            doc.save(`Laporan_Nilai_${s.Nama.replace(/\s+/g, '_')}.pdf`);
+        }
+    </script>
+</body>
+</html>
