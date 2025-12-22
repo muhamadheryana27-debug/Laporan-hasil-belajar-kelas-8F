@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cek Nilai Kelas VIII F</title>
+    <title>Login Nilai Kelas VIII F</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -11,34 +11,62 @@
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
-        body { font-family: 'Poppins', sans-serif; background-color: #f0f4f8; }
+        body { font-family: 'Poppins', sans-serif; background-color: #eef2f6; }
         .modal { transition: opacity 0.25s ease; }
         body.modal-active { overflow-x: hidden; overflow-y: visible !important; }
+        /* Hilangkan spinner di input number */
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     </style>
 </head>
-<body class="min-h-screen relative">
+<body class="min-h-screen flex flex-col items-center justify-center relative bg-gradient-to-br from-blue-500 to-indigo-600">
 
-    <div class="max-w-md mx-auto bg-white min-h-screen shadow-xl relative pb-24">
-        
-        <div class="bg-blue-600 p-6 rounded-b-3xl shadow-lg text-white mb-6">
-            <div class="flex items-center gap-3 mb-2">
-                <i class="fas fa-graduation-cap text-3xl"></i>
-                <div>
-                    <h1 class="text-xl font-bold">Portal Nilai Siswa</h1>
-                    <p class="text-blue-100 text-sm">Kelas VIII F - Semester Ganjil</p>
-                </div>
+    <div id="loginPage" class="w-full max-w-md px-6 transition-all duration-500">
+        <div class="bg-white rounded-3xl shadow-2xl p-8 text-center">
+            <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6 text-blue-600 text-3xl shadow-inner">
+                <i class="fas fa-user-lock"></i>
             </div>
             
-            <div class="mt-4 relative">
-                <input type="text" id="searchInput" placeholder="Ketik Nama atau NISN..." 
-                    class="w-full pl-10 pr-4 py-3 rounded-xl text-gray-800 focus:outline-none focus:ring-4 focus:ring-blue-300 shadow-inner"
-                    onkeyup="searchStudent()">
-                <i class="fas fa-search absolute left-4 top-3.5 text-gray-400"></i>
+            <h1 class="text-2xl font-bold text-gray-800 mb-1">Portal Siswa</h1>
+            <p class="text-gray-500 text-sm mb-8">Kelas VIII F - Semester Ganjil</p>
+
+            <div class="space-y-4 text-left">
+                <div>
+                    <label class="text-xs font-bold text-gray-600 ml-1 uppercase">Masukkan NISN</label>
+                    <div class="relative mt-1">
+                        <input type="number" id="nisnInput" placeholder="Contoh: 0118597139" 
+                            class="w-full pl-12 pr-4 py-4 rounded-xl bg-gray-50 border border-gray-200 text-gray-800 font-bold text-lg focus:outline-none focus:ring-4 focus:ring-blue-200 focus:border-blue-500 transition"
+                            onkeypress="handleEnter(event)">
+                        <i class="fas fa-id-card absolute left-4 top-5 text-gray-400"></i>
+                    </div>
+                    <p id="loginError" class="text-red-500 text-xs mt-2 hidden"><i class="fas fa-exclamation-circle mr-1"></i>NISN tidak ditemukan. Coba lagi.</p>
+                </div>
+
+                <button onclick="attemptLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-500/30 transition transform active:scale-95 flex items-center justify-center gap-2">
+                    Cek Nilai Saya <i class="fas fa-arrow-right"></i>
+                </button>
             </div>
+            
+            <p class="text-xs text-gray-400 mt-8">Gunakan NISN yang terdaftar di Dapodik.</p>
+        </div>
+    </div>
+
+    <div id="resultPage" class="w-full max-w-md bg-white min-h-screen shadow-xl relative pb-24 hidden">
+        
+        <div class="bg-blue-600 p-6 rounded-b-3xl shadow-lg text-white mb-6 flex justify-between items-start">
+            <div class="flex items-center gap-3">
+                <i class="fas fa-graduation-cap text-3xl"></i>
+                <div>
+                    <h1 class="text-lg font-bold">Hasil Belajar</h1>
+                    <p class="text-blue-100 text-xs">Semester Ganjil</p>
+                </div>
+            </div>
+            <button onclick="logout()" class="bg-white/20 hover:bg-white/30 p-2 rounded-lg text-sm transition">
+                <i class="fas fa-sign-out-alt"></i> Keluar
+            </button>
         </div>
 
-        <div id="resultContainer" class="px-5 hidden">
-            <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-md mb-4 text-center relative overflow-hidden">
+        <div class="px-5">
+            <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-md mb-4 text-center relative">
                 <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 text-blue-600 text-2xl font-bold">
                     <span id="initialName">A</span>
                 </div>
@@ -65,8 +93,7 @@
 
             <div class="mb-4">
                 <h3 class="font-bold text-gray-700 mb-2 pl-1 text-sm uppercase tracking-wide">Rincian Nilai</h3>
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden" id="gradesList">
-                    </div>
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden" id="gradesList"></div>
             </div>
 
             <div class="mb-8">
@@ -88,12 +115,7 @@
             </div>
         </div>
 
-        <div id="emptyState" class="text-center mt-10 px-6 opacity-60">
-            <i class="fas fa-id-card text-6xl text-gray-300 mb-4"></i>
-            <p class="text-gray-500">Ketik <b>Nama</b> atau <b>NISN</b> kamu di atas.</p>
-        </div>
-
-        <div id="downloadBtnContainer" class="fixed bottom-6 left-0 right-0 px-6 hidden z-40">
+        <div class="fixed bottom-6 left-0 right-0 px-6 z-40 max-w-md mx-auto">
             <button onclick="downloadPDF()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg flex items-center justify-center gap-2 transition transform active:scale-95">
                 <i class="fas fa-file-pdf"></i> Simpan PDF
             </button>
@@ -102,27 +124,22 @@
 
     <div id="adviceModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
         <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50" onclick="closeAdviceModal()"></div>
-        
         <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-2xl shadow-2xl z-50 overflow-y-auto max-h-[90vh] transform scale-95 transition-transform duration-300">
-            
             <div class="bg-indigo-600 p-4 text-white rounded-t-2xl flex justify-between items-center">
                 <h3 class="font-bold text-lg"><i class="fas fa-comment-dots mr-2"></i>Saran Akademik</h3>
                 <button onclick="closeAdviceModal()" class="text-white hover:text-gray-200 focus:outline-none">
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
-
             <div class="p-6">
                 <div id="adviceContent" class="space-y-4"></div>
-                <button onclick="closeAdviceModal()" class="mt-6 w-full bg-gray-100 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-200">
-                    Tutup
-                </button>
+                <button onclick="closeAdviceModal()" class="mt-6 w-full bg-gray-100 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-200">Tutup</button>
             </div>
         </div>
     </div>
 
     <script>
-        // DATA SISWA
+        // DATA SISWA (Database Lokal)
         const studentsData = [
             {No:1,Nama:"ABIE YAHYA FAUDJAN",NISN:"0118597139",NIS:"24257171",PAI:83,PP:82,BINd:79,Mtk:83,IPA:78,IPS:84,Bing:79,PJOK:82,Inf:78,Seni:85,Sunda:82,sakit:7,Izin:0,Alfa:1,Total:895,Peringkat:32},
             {No:2,Nama:"ALANIS AILA SYAQINA",NISN:"0119343209",NIS:"24257172",PAI:81,PP:81,BINd:83,Mtk:78,IPA:78,IPS:84,Bing:79,PJOK:83,Inf:80,Seni:83,Sunda:83,sakit:3,Izin:1,Alfa:0,Total:893,Peringkat:33},
@@ -176,33 +193,50 @@
             'Sunda': 'B. Sunda'
         };
 
-        function searchStudent() {
-            const input = document.getElementById('searchInput').value.toLowerCase();
-            const resultContainer = document.getElementById('resultContainer');
-            const emptyState = document.getElementById('emptyState');
-            const btnContainer = document.getElementById('downloadBtnContainer');
-
-            // Syarat: Minimal ketik 3 karakter (biar ga kepanjangan list-nya)
-            if (input.length < 3) {
-                resultContainer.classList.add('hidden');
-                emptyState.classList.remove('hidden');
-                btnContainer.classList.add('hidden');
-                return;
+        // EVENT LISTENER: Login saat tekan Enter
+        function handleEnter(e) {
+            if (e.key === "Enter") {
+                attemptLogin();
             }
+        }
 
-            // LOGIKA PENCARIAN BARU (NAMA atau NISN)
-            const found = studentsData.find(s => 
-                s.Nama.toLowerCase().includes(input) || 
-                s.NISN.includes(input)
-            );
+        // FUNGSI LOGIN
+        function attemptLogin() {
+            const nisnInput = document.getElementById('nisnInput').value.trim();
+            const errorMsg = document.getElementById('loginError');
+            
+            if (!nisnInput) return;
+
+            // Cari siswa berdasarkan NISN (Exact Match)
+            const found = studentsData.find(s => s.NISN === nisnInput);
 
             if (found) {
                 currentStudent = found;
                 displayStudent(found);
-                resultContainer.classList.remove('hidden');
-                emptyState.classList.add('hidden');
-                btnContainer.classList.remove('hidden');
+                
+                // Animasi transisi halaman
+                document.getElementById('loginPage').classList.add('hidden');
+                document.body.classList.remove('bg-gradient-to-br', 'from-blue-500', 'to-indigo-600');
+                document.body.classList.add('bg-[#eef2f6]');
+                
+                const resultPage = document.getElementById('resultPage');
+                resultPage.classList.remove('hidden');
+                errorMsg.classList.add('hidden');
+            } else {
+                // Tampilkan pesan error jika salah
+                errorMsg.classList.remove('hidden');
+                // Efek getar pada input
+                const inputField = document.getElementById('nisnInput');
+                inputField.classList.add('ring-4', 'ring-red-300', 'border-red-500');
+                setTimeout(() => {
+                    inputField.classList.remove('ring-4', 'ring-red-300', 'border-red-500');
+                }, 500);
             }
+        }
+
+        // FUNGSI LOGOUT
+        function logout() {
+            location.reload(); // Refresh halaman untuk reset
         }
 
         function displayStudent(s) {
