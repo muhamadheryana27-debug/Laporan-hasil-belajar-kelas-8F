@@ -30,7 +30,7 @@
             </div>
             
             <div class="mt-4 relative">
-                <input type="text" id="searchInput" placeholder="Ketik nama kamu di sini..." 
+                <input type="text" id="searchInput" placeholder="Ketik Nama atau NISN..." 
                     class="w-full pl-10 pr-4 py-3 rounded-xl text-gray-800 focus:outline-none focus:ring-4 focus:ring-blue-300 shadow-inner"
                     onkeyup="searchStudent()">
                 <i class="fas fa-search absolute left-4 top-3.5 text-gray-400"></i>
@@ -89,8 +89,8 @@
         </div>
 
         <div id="emptyState" class="text-center mt-10 px-6 opacity-60">
-            <i class="fas fa-school text-6xl text-gray-300 mb-4"></i>
-            <p class="text-gray-500">Ketik nama kamu di atas untuk melihat nilai.</p>
+            <i class="fas fa-id-card text-6xl text-gray-300 mb-4"></i>
+            <p class="text-gray-500">Ketik <b>Nama</b> atau <b>NISN</b> kamu di atas.</p>
         </div>
 
         <div id="downloadBtnContainer" class="fixed bottom-6 left-0 right-0 px-6 hidden z-40">
@@ -114,7 +114,6 @@
 
             <div class="p-6">
                 <div id="adviceContent" class="space-y-4"></div>
-                
                 <button onclick="closeAdviceModal()" class="mt-6 w-full bg-gray-100 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-200">
                     Tutup
                 </button>
@@ -183,6 +182,7 @@
             const emptyState = document.getElementById('emptyState');
             const btnContainer = document.getElementById('downloadBtnContainer');
 
+            // Syarat: Minimal ketik 3 karakter (biar ga kepanjangan list-nya)
             if (input.length < 3) {
                 resultContainer.classList.add('hidden');
                 emptyState.classList.remove('hidden');
@@ -190,7 +190,11 @@
                 return;
             }
 
-            const found = studentsData.find(s => s.Nama.toLowerCase().includes(input));
+            // LOGIKA PENCARIAN BARU (NAMA atau NISN)
+            const found = studentsData.find(s => 
+                s.Nama.toLowerCase().includes(input) || 
+                s.NISN.includes(input)
+            );
 
             if (found) {
                 currentStudent = found;
@@ -207,7 +211,6 @@
             document.getElementById('studentNISN').innerText = s.NISN;
             document.getElementById('studentTotal').innerText = s.Total;
 
-            // LOGIKA PERINGKAT (FITUR BARU)
             const rankElem = document.getElementById('rankDisplay');
             if (s.Peringkat <= 10) {
                 rankElem.innerHTML = `<span class="text-3xl">#${s.Peringkat}</span>`;
@@ -217,12 +220,10 @@
                 rankElem.className = "font-bold text-gray-500 mt-1 block";
             }
 
-            // Absensi
             document.getElementById('attSakit').innerText = s.sakit;
             document.getElementById('attIzin').innerText = s.Izin;
             document.getElementById('attAlfa').innerText = s.Alfa;
 
-            // Render Nilai
             const list = document.getElementById('gradesList');
             list.innerHTML = '';
 
@@ -242,11 +243,8 @@
             });
         }
 
-        // --- LOGIKA MODAL SARAN AKADEMIK ---
-        
         function openAdviceModal() {
             if (!currentStudent) return;
-            
             const modal = document.getElementById('adviceModal');
             const content = document.getElementById('adviceContent');
             const s = currentStudent;
@@ -257,7 +255,6 @@
             let adviceHTML = '';
             let hasIssue = false;
 
-            // 1. Cek Nilai di bawah 80
             const lowSubjects = [];
             Object.keys(mapelLabel).forEach(code => {
                 if (s[code] < 80) {
@@ -270,50 +267,45 @@
                 adviceHTML += `
                     <div class="bg-orange-50 border-l-4 border-orange-500 p-4 rounded">
                         <p class="font-bold text-orange-700 text-sm">⚠️ Perlu Peningkatan</p>
-                        <p class="text-sm text-gray-600 mt-1">Nilai kamu belum maksimal di pelajaran: <b>${lowSubjects.join(", ")}</b>. Yuk, lebih rajin latihan soal dan bertanya pada guru!</p>
+                        <p class="text-sm text-gray-600 mt-1">Nilai belum maksimal di: <b>${lowSubjects.join(", ")}</b>. Tingkatkan belajarmu!</p>
                     </div>
                 `;
             }
 
-            // 2. Cek Absensi (Alfa)
             if (s.Alfa > 2) {
                 hasIssue = true;
                 adviceHTML += `
                     <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded">
                         <p class="font-bold text-red-700 text-sm">⚠️ Kehadiran</p>
-                        <p class="text-sm text-gray-600 mt-1">Kamu memiliki <b>${s.Alfa} Alfa</b>. Usahakan selalu hadir atau berikan keterangan jika berhalangan ya.</p>
+                        <p class="text-sm text-gray-600 mt-1">Kamu memiliki <b>${s.Alfa} Alfa</b>. Usahakan selalu hadir ya.</p>
                     </div>
                 `;
             }
 
-            // 3. Pesan Apresiasi (Jika Peringkat 1-10)
             if (s.Peringkat <= 10) {
                 adviceHTML += `
                     <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded">
                         <p class="font-bold text-green-700 text-sm">🌟 Luar Biasa!</p>
-                        <p class="text-sm text-gray-600 mt-1">Selamat, kamu masuk <b>10 Besar</b>! Pertahankan prestasimu dan jangan lupa bantu teman-temanmu belajar.</p>
+                        <p class="text-sm text-gray-600 mt-1">Selamat, kamu masuk <b>10 Besar</b>! Pertahankan prestasimu.</p>
                     </div>
                 `;
             } else if (!hasIssue) {
-                // Jika tidak masuk 10 besar tapi tidak ada nilai < 80
                 adviceHTML += `
                     <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
                         <p class="font-bold text-blue-700 text-sm">👍 Kerja Bagus!</p>
-                        <p class="text-sm text-gray-600 mt-1">Nilai-nilaimu sudah cukup baik (di atas 80). Tingkatkan sedikit lagi agar bisa masuk peringkat atas di semester depan!</p>
+                        <p class="text-sm text-gray-600 mt-1">Nilai-nilaimu sudah cukup baik. Ayo semangat mengejar peringkat atas!</p>
                     </div>
                 `;
             }
 
-            // Default jika tidak ada saran spesifik lain (dan rank > 10)
             if (adviceHTML === '') {
                  adviceHTML += `
                     <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
                         <p class="font-bold text-blue-700 text-sm">✨ Tetap Semangat!</p>
-                        <p class="text-sm text-gray-600 mt-1">Perjalanan masih panjang. Evaluasi cara belajarmu dan fokus pada pelajaran yang kamu minati.</p>
+                        <p class="text-sm text-gray-600 mt-1">Evaluasi cara belajarmu dan fokus pada pelajaran yang kamu minati.</p>
                     </div>
                 `;
             }
-
             content.innerHTML = adviceHTML;
         }
 
@@ -323,15 +315,12 @@
             document.body.classList.remove('modal-active');
         }
 
-        // --- END MODAL LOGIC ---
-
         async function downloadPDF() {
             if (!currentStudent) return;
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             const s = currentStudent;
 
-            // Header
             doc.setFillColor(37, 99, 235);
             doc.rect(0, 0, 210, 40, 'F');
             doc.setTextColor(255, 255, 255);
@@ -342,14 +331,12 @@
             doc.setFont('helvetica', 'normal');
             doc.text("Kelas VIII F - Semester Ganjil", 105, 30, null, null, "center");
 
-            // Info Siswa
             doc.setTextColor(0, 0, 0);
             doc.setFontSize(12);
             doc.text(`Nama : ${s.Nama}`, 15, 55);
             doc.text(`NISN : ${s.NISN}`, 15, 62);
             doc.text(`NIS  : ${s.NIS}`, 15, 69);
             
-            // Logika Peringkat di PDF
             doc.setFontSize(14);
             doc.setFont('helvetica', 'bold');
             if (s.Peringkat <= 10) {
@@ -359,7 +346,6 @@
             }
             doc.text(`Total Nilai: ${s.Total}`, 150, 62);
 
-            // Tabel Nilai
             const tableData = Object.keys(mapelLabel).map(key => [mapelLabel[key], s[key]]);
             
             doc.autoTable({
@@ -371,7 +357,6 @@
                 styles: { fontSize: 12, cellPadding: 3 }
             });
 
-            // Tabel Absensi
             const finalY = doc.lastAutoTable.finalY + 10;
             doc.text("Kehadiran:", 15, finalY);
             
